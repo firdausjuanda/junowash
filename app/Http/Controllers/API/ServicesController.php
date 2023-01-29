@@ -14,9 +14,18 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = Services::all();
+        if (!$request) {
+            $data = Services::orderBy('id', 'desc')->get();
+        } else {
+            if ($request->start == $request->end) {
+                $data = Services::whereDate('created_at', $request->start)->orderBy('id', 'desc')->get();
+            } else {
+                $data = Services::whereBetween('created_at', [$request->start, $request->end])->orderBy('id', 'desc')->get();
+            }
+        }
+        // $data = Services::withTrashed()->get();
         if ($data) {
             return ApiFormatter::createApi(200, 'Success', $data);
         } else {
@@ -25,13 +34,37 @@ class ServicesController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getServiceAmount(Request $request)
+    {
+        if ($request->start == $request->end) {
+            $data = Services::whereDate('created_at', $request->start)->sum('price');
+        } else {
+            $data = Services::whereBetween('created_at', [$request->start, $request->end])->sum('price');
+        }
+        return ApiFormatter::createApi(200, 'Success', $data);
+    }
+
+    public function getServiceCount(Request $request)
+    {
+        if ($request->start == $request->end) {
+            $data = Services::whereDate('created_at', $request->start)->count('id');
+        } else {
+            $data = Services::whereBetween('created_at', [$request->start, $request->end])->count('id');
+        }
+        return ApiFormatter::createApi(200, 'Success', $data);
+    }
+
+    /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
     }
 
     /**
@@ -42,7 +75,36 @@ class ServicesController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $request->validate([
+                'unit_type' => 'required',
+                'price' => 'required',
+                'user' => 'required',
+                'status' => 'required',
+            ]);
+            $random1 = substr(str_shuffle(str_repeat("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5)), 0, 5);
+            $random = substr(str_shuffle(str_repeat("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5)), 0, 5);
+            $trans_code = ($request->vehicle_number != "") ? $request->vehicle_number . "-" . $random : $random1 . "-" . $random;
+            $service = Services::create([
+                'unit_type' => $request->unit_type,
+                'price' => $request->price,
+                'user' => $request->user,
+                'status' => $request->status,
+                'customer' => $request->customer,
+                'vehicle_number' => $request->vehicle_number,
+                'promo' => $request->promo,
+                'transaction_code' => $trans_code,
+            ]);
+
+            $data = Services::where('id', '=', $service->id)->get();
+            if ($data) {
+                return ApiFormatter::createApi(200, 'Success', $data);
+            } else {
+                return ApiFormatter::createApi(400, 'Failed');
+            }
+        } catch (\Exception $e) {
+            return ApiFormatter::createApi(400, "Failed: $e");
+        }
     }
 
     /**
@@ -53,7 +115,12 @@ class ServicesController extends Controller
      */
     public function show($id)
     {
-        //
+        $data = Services::where('id', '=', $id)->get();
+        if ($data) {
+            return ApiFormatter::createApi(200, 'Success', $data);
+        } else {
+            return ApiFormatter::createApi(400, 'Failed');
+        }
     }
 
     /**
@@ -76,7 +143,31 @@ class ServicesController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        try {
+            $request->validate([
+                'unit_type' => 'required',
+                'price' => 'required',
+                'user' => 'required',
+                'status' => 'required',
+            ]);
+
+            $service = Services::findOrFail($id);
+            $service->update([
+                'unit_type' => $request->unit_type,
+                'price' => $request->price,
+                'user' => $request->user,
+                'status' => $request->status,
+            ]);
+
+            $data = Services::where('id', '=', $service->id)->get();
+            if ($data) {
+                return ApiFormatter::createApi(200, 'Success', $data);
+            } else {
+                return ApiFormatter::createApi(400, 'Failed');
+            }
+        } catch (\Exception $e) {
+            return ApiFormatter::createApi(400, "Failed: {$e->getMessage()}");
+        }
     }
 
     /**
@@ -87,6 +178,16 @@ class ServicesController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $service = Services::findOrFail($id);
+        if (!$service) {
+            return ApiFormatter::createApi(404, "Failed: Service $service->id not found");
+        } else {
+            $data = $service->delete();
+            if ($data) {
+                return ApiFormatter::createApi(200, "Success destroy data id: $service->id");
+            } else {
+                return ApiFormatter::createApi(400, 'Failed');
+            }
+        }
     }
 }

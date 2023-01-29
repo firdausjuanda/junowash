@@ -13,16 +13,20 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('services', function (Blueprint $table) {
+        Schema::create('cashout', function (Blueprint $table) {
             $table->id();
-            $table->string('unit_type');
-            $table->integer('price');
-            $table->string('status');
+            $table->string('material')->nullable();
+            $table->string('type');
+            $table->integer('amount')->default(0);
+            $table->string('currency')->default('idr');
             $table->integer('user');
-            $table->softDeletes();
+            $table->integer('qty');
+            $table->string('status');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
+
 
     /**
      * Reverse the migrations.
@@ -31,6 +35,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('services');
+        Schema::dropIfExists('cashout');
     }
 };

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\GiftsController;
+use App\Http\Controllers\LookupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,5 +16,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('pages/home');
 });
+Route::get('/lookup', [LookupController::class, 'index']);
+Route::post('/lookup', [LookupController::class, 'lookup']);
+Route::get('/gifts', [GiftsController::class, 'index']);
+Route::get('/gifts/randomize', [GiftsController::class, 'randomize']);

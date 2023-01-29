@@ -6,21 +6,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Services extends Model
+class Expenses extends Model
 {
     use HasFactory;
     use SoftDeletes;
 
-    protected $tabel = 'services';
+    protected $table = 'expenses';
+
     protected $fillable = [
-        'unit_type',
-        'price',
+        'category',
         'status',
-        'user',
-        'customer',
-        'vehicle_number',
-        'promo',
-        'transaction_code',
+        'description',
+        'amount',
+        'user_id',
+        'supplier_id',
     ];
+
     protected $hidden = [];
 }

@@ -6,21 +6,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Services extends Model
+class Cashout extends Model
 {
     use HasFactory;
     use SoftDeletes;
 
-    protected $tabel = 'services';
+    protected  $table = 'cashout';
+    
     protected $fillable = [
-        'unit_type',
-        'price',
+        'material',
+        'active',
+        'amount',
+        'type',
         'status',
         'user',
-        'customer',
-        'vehicle_number',
-        'promo',
-        'transaction_code',
+        'currency',
+        'qty',
     ];
-    protected $hidden = [];
 }
