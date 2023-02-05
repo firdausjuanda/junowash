@@ -23,4 +23,5 @@ class Cashout extends Model
         'currency',
         'qty',
     ];
+    protected $hidden = [];
 }

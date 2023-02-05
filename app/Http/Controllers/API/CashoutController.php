@@ -19,14 +19,21 @@ class CashoutController extends Controller
      */
     public function index(Request $request)
     {
-        // $start_date = Carbon::
-        if(!$request->start && !$request->end && !$request->exact || $request->start && $request->end && $request->exact || $request->start && !$request->end && $request->exact || !$request->start && $request->end && $request->exact || $request->start && !$request->end && !$request->exact || !$request->start && $request->end && !$request->exact){
-            return ApiFormatter::createApi('400', 'Invalid input');
-        } elseif ($request->exact && !$request->start && !$request->end){
-            // $cashout = Cashout::where('created_at', $request->exact)->get();
-            $cashout = Cashout::where('created_at', '=' ,date("2023-01-28"))->get();
-        } elseif (!$request->exact && $request->start && $request->end) {
-            $cashout = Cashout::whereBetween('created_at', [$request->start, $request->end])->get();
+        if($request->exact){
+            if($request->start || $request->end){
+                return ApiFormatter::createApi('400', 'Invalid input');
+            } else {
+                $cashout = Cashout::whereDate('created_at', Carbon::parse($request->exact))->get();
+            }
+        } else {
+            if($request->start && $request->end){
+                if($request->start > $request->end){
+                    return ApiFormatter::createApi('400', 'Invalid input');
+                }
+                $cashout = Cashout::whereBetween('created_at', [Carbon::parse($request->start)->startOfDay(), Carbon::parse($request->end)->endOfDay()])->orderBy('id', 'desc')->get();
+            } else {
+                return ApiFormatter::createApi('400', 'Invalid input');
+            }
         }
         return ApiFormatter::createApi('200', 'Success', $cashout);
     }
@@ -93,7 +100,8 @@ class CashoutController extends Controller
      */
     public function show($id)
     {
-        //
+        $cashout = Cashout::find($id);
+        return ApiFormatter::createApi('200', 'Success', $cashout);
     }
 
     /**
@@ -116,7 +124,21 @@ class CashoutController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $data = [];
+        foreach ($request->all() as $key => $value) {
+            if($key != 'id' && $key != 'status' && $key != 'user'){
+                $data[$key] = $value;
+            }
+        }
+        $cashout = Cashout::find($id);
+        if(!$cashout){
+            return ApiFormatter::createApi(400, 'Not Found');
+        } else {
+            $cashout->update($data);
+            $updated_data = Cashout::find($id);
+            return ApiFormatter::createApi(200, 'Success', $updated_data);
+        }
+
     }
 
     /**
@@ -125,8 +147,56 @@ class CashoutController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        //
+        $cashout = Cashout::where('id', '=' ,$id)->withTrashed()->first();
+        $user = User::find($request->user);
+        if(!$cashout){
+            return ApiFormatter::createApi(400, 'Not found');
+        } else {
+            if(!$user){
+                return ApiFormatter::createApi(400, 'User not found');
+            } else {
+                if($user->role != 'admin'){
+                    return ApiFormatter::createApi(400, 'Authorization error');
+                } else {
+                    if($cashout->deleted_at == null){
+                        $cashout->delete();
+                        return ApiFormatter::createApi(200, 'Success', $cashout);
+                    } else {
+                        return ApiFormatter::createApi(400, 'Already deleted');
+                    }
+                }
+            }
+        }
+    }
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function approve(Request $request, $id)
+    {
+        $cashout = Cashout::where('id', '=' ,$id)->first();
+        $user = User::find($request->user);
+        if(!$cashout){
+            return ApiFormatter::createApi(400, 'Not found');
+        } else {
+            if(!$user){
+                return ApiFormatter::createApi(400, 'User not found');
+            } else {
+                if($user->role != 'admin'){
+                    return ApiFormatter::createApi(400, 'Authorization error');
+                } else {
+                    if($cashout->deleted_at == null){
+                        $cashout->delete();
+                        return ApiFormatter::createApi(200, 'Success', $cashout);
+                    } else {
+                        return ApiFormatter::createApi(400, 'Already deleted');
+                    }
+                }
+            }
+        }
     }
 }
