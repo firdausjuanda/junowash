@@ -33,7 +33,7 @@ class GiftsController extends Controller
             $data['winner_data'] = Services::find($services[$winner_id]);
             return $this->index($data);
         } else {
-            return view('pages/gifts');
+            return back()->with('success', 'No data');
         }
     }
 
